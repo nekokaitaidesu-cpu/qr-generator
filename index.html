@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QRコード生成</title>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #f0f4ff;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      padding: 24px;
+    }
+
+    h1 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: #1a1a2e;
+      margin-bottom: 28px;
+      letter-spacing: -0.5px;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 20px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.10);
+      padding: 32px 28px;
+      width: 100%;
+      max-width: 420px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .input-wrap {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 80px;
+      border: 2px solid #d0d7f0;
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-size: 1rem;
+      color: #222;
+      resize: vertical;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    textarea:focus { border-color: #4f6ef7; }
+    textarea::placeholder { color: #aab; }
+
+    button {
+      width: 100%;
+      padding: 14px;
+      background: #4f6ef7;
+      color: #fff;
+      font-size: 1.05rem;
+      font-weight: 600;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+    }
+    button:hover { background: #3a57d4; }
+    button:active { transform: scale(0.98); }
+
+    #qr-wrap {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      width: 100%;
+    }
+
+    #qr-img {
+      border-radius: 12px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+      max-width: 100%;
+      touch-action: manipulation;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    canvas { display: none; }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      width: 100%;
+    }
+
+    .btn-secondary {
+      background: #f0f4ff;
+      color: #4f6ef7;
+      border: 2px solid #4f6ef7;
+      font-size: 0.95rem;
+    }
+    .btn-secondary:hover { background: #e0e8ff; }
+
+    .hint {
+      font-size: 0.8rem;
+      color: #888;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <h1>QRコード生成</h1>
+  <div class="card">
+    <div class="input-wrap">
+      <textarea id="input" placeholder="URLまたはテキストを入力&#10;例: https://example.com" autofocus></textarea>
+      <button onclick="generate()">QRコードを生成</button>
+    </div>
+
+    <div id="qr-wrap">
+      <canvas id="qr-canvas"></canvas>
+      <img id="qr-img" alt="QRコード">
+      <div class="actions">
+        <button class="btn-secondary" onclick="download()">画像を保存</button>
+        <button class="btn-secondary" onclick="copyImg()">コピー</button>
+      </div>
+      <p class="hint">📱 スマホで長押し → 画像を保存</p>
+    </div>
+  </div>
+
+  <script>
+    const input = document.getElementById('input');
+    const qrWrap = document.getElementById('qr-wrap');
+    const canvas = document.getElementById('qr-canvas');
+    const qrImg = document.getElementById('qr-img');
+
+    input.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); generate(); }
+    });
+
+    function generate() {
+      const text = input.value.trim();
+      if (!text) { input.focus(); return; }
+
+      const size = Math.min(window.innerWidth - 80, 280);
+
+      QRCode.toCanvas(canvas, text, {
+        width: size,
+        margin: 2,
+        color: { dark: '#1a1a2e', light: '#ffffff' }
+      }, err => {
+        if (err) { alert('生成に失敗しました: ' + err); return; }
+        qrImg.src = canvas.toDataURL('image/png');
+        qrWrap.style.display = 'flex';
+        qrWrap.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      });
+    }
+
+    function download() {
+      const a = document.createElement('a');
+      a.download = 'qrcode.png';
+      a.href = canvas.toDataURL('image/png');
+      a.click();
+    }
+
+    async function copyImg() {
+      canvas.toBlob(async blob => {
+        try {
+          await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+          alert('クリップボードにコピーしました');
+        } catch {
+          alert('このブラウザではコピーできません。「画像を保存」をお使いください。');
+        }
+      });
+    }
+  </script>
+</body>
+</html>
